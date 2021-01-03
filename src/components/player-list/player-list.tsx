@@ -8,6 +8,7 @@ interface Props {
   header: string;
   players: Player[],
   draft: Draft,
+  draftInProgress: boolean,
   setDraft: (draft: Draft) => void,
   includePosition: boolean,
   includeAge: boolean,
@@ -19,6 +20,7 @@ const DEFAULT_PROPS: Props = {
   header: 'Players',
   players: ROOKIES_2019,
   draft: Draft.newBuilder().build(),
+  draftInProgress: false,
   setDraft: () => {
   },
   includeAge: false,
@@ -38,9 +40,11 @@ export function PlayerList(props: Props = DEFAULT_PROPS) {
   );
 
   function toPlayerListItem(player: Player, index: number) {
+    const playerAlreadyDrafted = props.draft.alreadyDrafted(player);
     return (
-      <li key={index}>
-        <div onClick={draftPlayer}>{getString()}</div>
+      <li key={index} style={playerAlreadyDrafted ? {textDecoration: 'line-through'} : {}}>
+        <div onClick={props.draftInProgress && !props.draft.isComplete() ? draftPlayer : () => {
+        }}>{getString()}</div>
       </li>
     );
 
@@ -54,8 +58,7 @@ export function PlayerList(props: Props = DEFAULT_PROPS) {
       const draft =
         props
           .draft
-          .makePlayerSelection(playerSelection)
-          .incrementPick();
+          .makePlayerSelection(playerSelection);
       props.setDraft(draft);
       console.log('Drafted player: ', playerSelection);
     }

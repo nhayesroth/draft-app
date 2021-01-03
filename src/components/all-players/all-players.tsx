@@ -1,15 +1,20 @@
 import { PlayerList } from '../player-list/player-list';
-import { ROOKIES_2019 } from '../../entities/players/constants/2019-rookies';
+import { Draft } from '../../entities/draft/draft';
 
 interface Props {
-  positions: string[],
+  draft: Draft,
+  draftInProgress: boolean,
+  setDraft: (draft: Draft) => void,
 }
 
 export function AllPlayers(props: Props) {
   return (
     <PlayerList
       header={'All Players'}
-      players={ROOKIES_2019.filter(player => props.positions.includes(player.position))}
+      draft={props.draft}
+      draftInProgress={props.draftInProgress}
+      setDraft={props.setDraft}
+      players={props.draft.players}
       includePosition
       includeTeam />
   );

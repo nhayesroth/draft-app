@@ -1,4 +1,6 @@
 import { PlayerSelection } from './player-selection';
+import { Player } from '../players/player';
+import { Position } from '../positions/position';
 
 interface Args {
   numRounds: number,
@@ -6,6 +8,8 @@ interface Args {
   currentRound: number,
   currentPick: number,
   selections: (PlayerSelection | null)[][],
+  players: Player[],
+  positions: Position[],
 }
 
 export class Draft {
@@ -14,6 +18,8 @@ export class Draft {
   readonly currentRound: number;
   readonly currentPick: number;
   selections: (PlayerSelection | null)[][];
+  players: Player[];
+  positions: Position[];
 
   constructor(args: Args) {
     this.numRounds = args.numRounds;
@@ -21,6 +27,8 @@ export class Draft {
     this.currentRound = args.currentRound
     this.currentPick = args.currentPick
     this.selections = args.selections;
+    this.players = args.players;
+    this.positions = args.positions;
   }
 
   static newBuilder() {
@@ -33,7 +41,9 @@ export class Draft {
       .setNumTeams(this.numTeams)
       .setCurrentRound(this.currentRound)
       .setCurrentPick(this.currentPick)
-      .setSelections(this.selections);
+      .setSelections(this.selections)
+      .setPlayers(this.players)
+      .setPositions(this.positions);
   }
 
   makePlayerSelection(selection: PlayerSelection) {
@@ -42,9 +52,11 @@ export class Draft {
       this.selections[selection.round] = [];
     }
     this.selections[selection.round][selection.pick] = selection;
+    console.log('makePlayerSelection', selection.round, selection.pick, selection.player.name);
     return this.toBuilder()
       .setSelections(this.selections)
-      .build();
+      .build()
+      .incrementPick();
   }
 
   removeSelection(round: number, pick: number) {
@@ -58,11 +70,11 @@ export class Draft {
   incrementPick() {
     return this.toBuilder()
       .setCurrentRound(
-        this.currentPick <= this.numTeams
+        this.currentPick < this.numTeams
           ? this.currentRound
           : this.currentRound + 1)
       .setCurrentPick(
-        this.currentPick <= this.numTeams
+        this.currentPick < this.numTeams
           ? this.currentPick + 1
           : 1)
       .build();
@@ -75,6 +87,34 @@ export class Draft {
       .setSelections([])
       .build();
   }
+
+  alreadyDrafted(player: Player) {
+    for (let round = 0; round < this.selections.length; round += 1) {
+      for (let pick = 0; pick < this.selections[round]?.length; pick++) {
+        const draftedPlayer = this.selections[round][pick]?.player;
+        if (draftedPlayer && player.equals(draftedPlayer)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  isComplete() {
+    if (this.currentRound <= this.numRounds) {
+      console.log(`isComplete()? (${this.currentRound}.${this.currentPick}) - this.currentRound(${this.currentRound}) <= this.numRounds(${this.numRounds})`, this.currentRound <= this.numRounds)
+      return false;
+    }
+    for (let round = 1; round < this.selections.length; round += 1) {
+      for (let pick = 1; pick < this.selections[round]?.length; pick++) {
+        const draftedPlayer = this.selections[round][pick]?.player;
+        if (!draftedPlayer) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 }
 
 class Builder {
@@ -83,6 +123,8 @@ class Builder {
   private selections: (PlayerSelection | null)[][];
   private currentRound: number;
   private currentPick: number;
+  private players: Player[];
+  private positions: Position[];
 
   constructor() {
     this.numRounds = -1;
@@ -90,6 +132,8 @@ class Builder {
     this.currentRound = 1;
     this.currentPick = 1;
     this.selections = [];
+    this.players = [];
+    this.positions = [];
   }
 
   setNumRounds(numRounds: number) {
@@ -114,6 +158,8 @@ class Builder {
       currentRound: this.currentRound,
       currentPick: this.currentPick,
       selections: this.selections,
+      players: this.players,
+      positions: this.positions,
     });
   }
 
@@ -124,6 +170,16 @@ class Builder {
 
   setCurrentPick(currentPick: number) {
     this.currentPick = currentPick;
+    return this;
+  }
+
+  setPlayers(players: Player[]) {
+    this.players = players;
+    return this;
+  }
+
+  setPositions(positions: Position[]) {
+    this.positions = positions;
     return this;
   }
 }

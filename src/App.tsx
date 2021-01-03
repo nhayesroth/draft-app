@@ -7,27 +7,44 @@ import { AllPlayers } from './components/all-players/all-players';
 import { ROOKIES_2019 } from './entities/players/constants/2019-rookies';
 import { DraftBoard } from './components/draft-board/draft-board';
 import { Draft } from './entities/draft/draft';
+import { useAutoDraft } from './hooks/use-auto-draft';
+import { Controls } from './components/controls/controls';
 
 export function App() {
   const [positions, setPositions] = React.useState(STANDARD_POSITIONS);
-  const [draft, setDraft] = React.useState(Draft.newBuilder().setNumTeams(10).setNumRounds(5).build());
+  const [draftInProgress, setDraftInProgress] = React.useState(false);
+  const [draft, setDraft] =
+    React.useState(
+      Draft.newBuilder()
+        .setNumTeams(5)
+        .setNumRounds(2)
+        .setPositions(positions)
+        .setPlayers(ROOKIES_2019.filter(player => positions.includes(player.position)))
+        .build());
+  useAutoDraft({draft, setDraft, draftInProgress, setDraftInProgress});
+
   return (
     <>
       <SelectPositions positions={positions} setPositions={setPositions} />
-      <DraftBoard draft={draft} setDraft={setDraft} numTeams={10} numRounds={5} />
+      <Controls
+        draft={draft}
+        setDraft={setDraft}
+        draftInProgress={draftInProgress}
+        setDraftInProgress={setDraftInProgress} />
+      <DraftBoard draft={draft} setDraft={setDraft} numTeams={draft.numTeams} numRounds={draft.numRounds} />
       <div style={{display: 'flex'}}>
-        <AllPlayers positions={positions} />
+        <AllPlayers draft={draft} draftInProgress={draftInProgress} setDraft={setDraft} />
         {getPlayerListsForEachPosition()}
       </div>
-    </>
-  );
+    </>);
 
   function getPlayerListsForEachPosition() {
     return positions
-      .map(position => ROOKIES_2019.filter(player => player.position === position))
+      .map(position => draft.players.filter(player => player.position === position))
       .map(
         players =>
           <PlayerList
+            draftInProgress={draftInProgress}
             players={players}
             header={players[0].position}
             draft={draft}
