@@ -1,10 +1,14 @@
 import { Player } from '../../entities/players/player';
 import PropTypes from 'prop-types';
 import { ROOKIES_2019 } from '../../entities/players/constants/2019-rookies';
+import { Draft } from '../../entities/draft/draft';
+import { PlayerSelection } from '../../entities/draft/player-selection';
 
 interface Props {
   header: string;
-  players: Player[]
+  players: Player[],
+  draft: Draft,
+  setDraft: (draft: Draft) => void,
   includePosition: boolean,
   includeAge: boolean,
   includeSchool: boolean,
@@ -14,6 +18,9 @@ interface Props {
 const DEFAULT_PROPS: Props = {
   header: 'Players',
   players: ROOKIES_2019,
+  draft: Draft.newBuilder().build(),
+  setDraft: () => {
+  },
   includeAge: false,
   includePosition: false,
   includeSchool: false,
@@ -33,9 +40,25 @@ export function PlayerList(props: Props = DEFAULT_PROPS) {
   function toPlayerListItem(player: Player, index: number) {
     return (
       <li key={index}>
-        <div>{getString()}</div>
+        <div onClick={draftPlayer}>{getString()}</div>
       </li>
     );
+
+    function draftPlayer() {
+      const playerSelection =
+        PlayerSelection.newBuilder()
+          .setRound(props.draft.currentRound)
+          .setPick(props.draft.currentPick)
+          .setPlayer(player)
+          .build();
+      const draft =
+        props
+          .draft
+          .makePlayerSelection(playerSelection)
+          .incrementPick();
+      props.setDraft(draft);
+      console.log('Drafted player: ', playerSelection);
+    }
 
     function getString() {
       return [
