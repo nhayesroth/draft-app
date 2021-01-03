@@ -8,8 +8,9 @@ interface Props {
 }
 
 export function DraftBoard(props: Props) {
+  const BORDER = {border: 'black', borderStyle: 'solid', borderWidth: '1px'};
   return (
-    <table>
+    <table style={BORDER}>
       {getHeaders()}
       {getDraftRows()}
     </table>
@@ -17,7 +18,7 @@ export function DraftBoard(props: Props) {
 
   function getHeaders() {
     return (
-      <tr>{generateTeamNames().map(drafter => <th>{drafter}</th>)}</tr>
+      <tr>{generateTeamNames().map(drafter => <th style={BORDER}>{drafter}</th>)}</tr>
     );
 
     function generateTeamNames() {
@@ -54,11 +55,11 @@ export function DraftBoard(props: Props) {
     const selection = getSelection();
     if (selection) {
       return (
-        <td>
-          {`${formatPick()} ${selection.player.position} ${selection.player.name}`}
+        <td style={BORDER}>
+          {`${formatPick()} ${selection.player.name} (${selection.player.position})`}
         </td>);
     }
-    return <td>{formatPick()}</td>;
+    return <td style={BORDER}>{formatPick()}</td>;
 
     function getSelection() {
       return props.draft.selections[args.round]?.[args.pick];
