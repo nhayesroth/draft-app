@@ -180,9 +180,20 @@ export class Draft {
       .build();
   }
 
-  isUserPick(): boolean {
-    const currentPick = new Pick(this.currentRound, this.currentPick);
-    return this.userPicks.some(pick => pick.equals(currentPick));
+  isUserPick(pick: Pick = new Pick(this.currentRound, this.currentPick)): boolean {
+    return this.userPicks.some(userPick => userPick.equals(pick));
+  }
+
+  removeUserPick(pick: Pick): Draft {
+    return this.toBuilder()
+      .setUserPicks(this.userPicks.filter(userPick => !userPick.equals(pick)))
+      .build();
+  }
+
+  addUserPick(pick: Pick): Draft {
+    return this.toBuilder()
+      .setUserPicks(this.userPicks.concat(pick))
+      .build();
   }
 }
 

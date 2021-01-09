@@ -1,6 +1,7 @@
 import { Draft } from '../../entities/draft/draft';
 import { Pick } from '../../entities/draft/pick';
 import { PlayerSelection } from '../../entities/draft/player-selection';
+import { State } from '../../entities/draft/state';
 
 interface Props {
   numRounds: number,
@@ -11,9 +12,12 @@ interface Props {
 
 export function DraftBoard(props: Props) {
   const BORDER = {border: 'black', borderStyle: 'solid', borderWidth: '1px'};
-  const USER_PICK = {border: 'black', borderStyle: 'solid', borderWidth: '1px', backgroundColor: 'cyan'};
+  const USER_PICK = {border: 'black', borderStyle: 'solid', borderWidth: '4px'};
   return (
     <table style={BORDER}>
+      <colgroup>
+        <col span={props.numTeams} style={{minWidth: '200px'}} />
+      </colgroup>
       {getTeamNameHeaders()}
       {getDraftRows()}
     </table>
@@ -32,6 +36,7 @@ export function DraftBoard(props: Props) {
     );
 
     function claimTeam(index: number) {
+      if (props.draft.state !== State.CONFIGURING) return;
       const teamNames = [...props.draft.teamNames];
       const oldTeamIndex = teamNames.findIndex(s => s === 'My Team');
       if (oldTeamIndex !== -1) {
@@ -80,12 +85,13 @@ export function DraftBoard(props: Props) {
   function DraftCell(args: CellArgs) {
     const selection = getSelection();
     const pick: Pick = new Pick(args.round, args.pick);
-    const isUserPick = props.draft.userPicks.some(p => p.equals(pick));
+    const isUserPick = props.draft.isUserPick(pick);
     return (
-      <td style={isUserPick ? USER_PICK : BORDER}>
+      <td style={isUserPick ? USER_PICK : BORDER} onClick={toggleUserPick}>
+        <CellHeader isUserPick={isUserPick} />
         {selection
           ? `${formatPick()} ${selection.player.name} (${selection.player.position})`
-          : formatPick()}
+          : `${formatPick()}`}
       </td>);
 
     function getSelection(): PlayerSelection | null {
@@ -97,6 +103,20 @@ export function DraftBoard(props: Props) {
         ? `${args.round}.0${args.pick}`
         : `${args.round}.${args.pick}`;
     }
+
+    function toggleUserPick() {
+      if (props.draft.state !== State.CONFIGURING) return;
+      if (props.draft.isUserPick(pick)) {
+        props.setDraft(props.draft.removeUserPick(pick));
+      } else {
+        props.setDraft(props.draft.addUserPick(pick));
+      }
+    }
   }
 
+  function CellHeader(props: { isUserPick: boolean }) {
+    return props.isUserPick
+      ? <div style={{backgroundColor: 'black', color: 'white'}}> My pick</div>
+      : <br />;
+  }
 }
