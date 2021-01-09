@@ -43,7 +43,7 @@ export function PlayerList(props: Props = DEFAULT_PROPS) {
         <div
           onClick={
             // TODO: only when it's my turn!
-            props.draft.inProgress() && !props.draft.isComplete()
+            props.draft.inProgress() && props.draft.isUserPick()
               ? draftPlayer
               : () => {}
           }>

@@ -2,8 +2,10 @@ import { PlayerSelection } from './player-selection';
 import { Player } from '../players/player';
 import { Position } from '../positions/position';
 import { State } from './state';
+import { Pick } from './pick';
 
 interface Args {
+  userPicks: Pick[];
   teamNames?: string[];
   numRounds: number,
   numTeams: number,
@@ -22,6 +24,7 @@ export class Draft {
   readonly currentRound: number;
   readonly currentPick: number;
   readonly state: State;
+  readonly userPicks: Pick[];
   selections: (PlayerSelection | null)[][];
   players: Player[];
   positions: Position[];
@@ -36,6 +39,7 @@ export class Draft {
     this.players = args.players;
     this.positions = args.positions;
     this.state = args.state || State.CONFIGURING;
+    this.userPicks = args.userPicks;
   }
 
   static generateTeamNames(numTeams: number): string[] {
@@ -47,7 +51,7 @@ export class Draft {
     return new Builder();
   }
 
-  toBuilder() {
+  toBuilder(): Builder {
     return new Builder()
       .setNumRounds(this.numRounds)
       .setNumTeams(this.numTeams)
@@ -56,7 +60,9 @@ export class Draft {
       .setSelections(this.selections)
       .setPlayers(this.players)
       .setPositions(this.positions)
-      .setState(this.state);
+      .setState(this.state)
+      .setUserPicks(this.userPicks)
+      .setTeamNames(this.teamNames);
   }
 
   makePlayerSelection(selection: PlayerSelection) {
@@ -173,6 +179,11 @@ export class Draft {
       .setState(State.FINISHED)
       .build();
   }
+
+  isUserPick(): boolean {
+    const currentPick = new Pick(this.currentRound, this.currentPick);
+    return this.userPicks.some(pick => pick.equals(currentPick));
+  }
 }
 
 class Builder {
@@ -184,6 +195,8 @@ class Builder {
   private players: Player[];
   private positions: Position[];
   private state: State;
+  private userPicks: Pick[];
+  private teamNames: string[];
 
   constructor() {
     this.numRounds = 5;
@@ -194,6 +207,8 @@ class Builder {
     this.players = [];
     this.positions = [];
     this.state = State.CONFIGURING
+    this.userPicks = [];
+    this.teamNames = [];
   }
 
   setNumRounds(numRounds: number) {
@@ -209,24 +224,6 @@ class Builder {
   setSelections(selections: (PlayerSelection | null)[][]) {
     this.selections = selections;
     return this;
-  }
-
-  build() {
-    if (this.currentRound > this.numRounds) {
-      this.currentRound = this.numRounds;
-      this.currentPick = this.numTeams;
-      this.state = State.FINISHED;
-    }
-    return new Draft({
-      numRounds: this.numRounds,
-      numTeams: this.numTeams,
-      currentRound: this.currentRound,
-      currentPick: this.currentPick,
-      selections: this.selections,
-      players: this.players,
-      positions: this.positions,
-      state: this.state,
-    });
   }
 
   setCurrentRound(currentRound: number): Builder {
@@ -252,5 +249,56 @@ class Builder {
   setState(state: State): Builder {
     this.state = state;
     return this;
+  }
+
+  setUserPicks(userPicks: Pick[]): Builder {
+    this.userPicks = userPicks;
+    console.log('setUserPicks()', userPicks);
+    return this;
+  }
+
+  setTeamNames(teamNames: string[]): Builder {
+    this.teamNames = teamNames;
+    return this;
+  }
+
+  build() {
+    // Finish the draft if we've reached the end without doing so.
+    if (this.currentRound > this.numRounds) {
+      this.currentRound = this.numRounds;
+      this.currentPick = this.numTeams;
+      this.state = State.FINISHED;
+    }
+    // Set the state if the user owns this pick.
+    if (this.state === State.AUTO_DRAFT
+      && this.userPicks.some(pick => pick.equals(new Pick(this.currentRound, this.currentPick)))) {
+      this.state = State.USER_PICK;
+    }
+    // Set the state if the computer owns this pick.
+    if (this.state === State.USER_PICK
+      && !this.userPicks.some(pick => pick.equals(new Pick(this.currentRound, this.currentPick)))) {
+      this.state = State.AUTO_DRAFT;
+    }
+    // Make sure we populate team names for computer drafters.
+    if (this.teamNames.length !== this.numTeams) {
+      for (let i = 0; i < this.numTeams; i++) {
+        const teamName = this.teamNames[i];
+        if (!teamName) {
+          this.teamNames[i] = 'Team-' + (i + 1);
+        }
+      }
+    }
+    return new Draft({
+      numRounds: this.numRounds,
+      numTeams: this.numTeams,
+      currentRound: this.currentRound,
+      currentPick: this.currentPick,
+      selections: this.selections,
+      players: this.players,
+      positions: this.positions,
+      state: this.state,
+      userPicks: this.userPicks,
+      teamNames: this.teamNames,
+    });
   }
 }

@@ -2,6 +2,7 @@ import { Draft } from '../entities/draft/draft';
 import { useInterval } from 'react-interval-hook';
 import { PlayerSelection } from '../entities/draft/player-selection';
 import React from 'react';
+import { State } from '../entities/draft/state';
 
 interface Args {
   draft: Draft,
@@ -10,16 +11,15 @@ interface Args {
 
 export function useAutoDraft(args: Args) {
   const {start, stop} = useInterval(autoDraftPlayer, 1000);
-  const draftInProgress = args.draft.inProgress();
-  console.log('useAutoDraft.draftInProgress?', draftInProgress);
+  const draftState: State = args.draft.state;
 
   React.useEffect(() => {
-    if (draftInProgress) {
+    if (draftState === State.AUTO_DRAFT) {
       start();
     } else {
       stop();
     }
-  }, [draftInProgress, start, stop]);
+  }, [draftState, start, stop]);
 
   React.useEffect(() => {
     if (args.draft.isComplete()) {
