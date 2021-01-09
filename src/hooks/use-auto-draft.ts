@@ -6,26 +6,26 @@ import React from 'react';
 interface Args {
   draft: Draft,
   setDraft: (draft: Draft) => void,
-  draftInProgress: boolean,
-  setDraftInProgress: (draftInProgress: boolean) => void,
 }
 
 export function useAutoDraft(args: Args) {
   const {start, stop} = useInterval(autoDraftPlayer, 1000);
+  const draftInProgress = args.draft.inProgress();
+  console.log('useAutoDraft.draftInProgress?', draftInProgress);
 
   React.useEffect(() => {
-    if (args.draftInProgress) {
+    if (draftInProgress) {
       start();
     } else {
       stop();
     }
-  }, [args.draftInProgress, start, stop]);
+  }, [draftInProgress, start, stop]);
 
   React.useEffect(() => {
     if (args.draft.isComplete()) {
       stop();
     }
-  }, [args.draft]);
+  }, [args.draft, stop]);
 
   function autoDraftPlayer() {
     const player = args.draft.players.find(player => !args.draft.alreadyDrafted(player));
@@ -43,9 +43,6 @@ export function useAutoDraft(args: Args) {
     console.log('useAutoDraft - selection', selection);
     const draft = args.draft.makePlayerSelection(selection)
     args.setDraft(draft);
-    if (draft.isComplete()) {
-      args.setDraftInProgress(false);
-    }
   }
 }
 

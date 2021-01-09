@@ -1,8 +1,10 @@
 import { PlayerSelection } from './player-selection';
 import { Player } from '../players/player';
 import { Position } from '../positions/position';
+import { State } from './state';
 
 interface Args {
+  teamNames?: string[];
   numRounds: number,
   numTeams: number,
   currentRound: number,
@@ -10,13 +12,16 @@ interface Args {
   selections: (PlayerSelection | null)[][],
   players: Player[],
   positions: Position[],
+  state?: State,
 }
 
 export class Draft {
   readonly numRounds: number;
   readonly numTeams: number;
+  readonly teamNames: string[];
   readonly currentRound: number;
   readonly currentPick: number;
+  readonly state: State;
   selections: (PlayerSelection | null)[][];
   players: Player[];
   positions: Position[];
@@ -24,11 +29,18 @@ export class Draft {
   constructor(args: Args) {
     this.numRounds = args.numRounds;
     this.numTeams = args.numTeams
+    this.teamNames = args.teamNames || Draft.generateTeamNames(args.numTeams);
     this.currentRound = args.currentRound
     this.currentPick = args.currentPick
     this.selections = args.selections;
     this.players = args.players;
     this.positions = args.positions;
+    this.state = args.state || State.CONFIGURING;
+  }
+
+  static generateTeamNames(numTeams: number): string[] {
+    return [...Array(numTeams).keys()]
+      .map(index => 'Team-' + (index + 1));
   }
 
   static newBuilder() {
@@ -43,7 +55,8 @@ export class Draft {
       .setCurrentPick(this.currentPick)
       .setSelections(this.selections)
       .setPlayers(this.players)
-      .setPositions(this.positions);
+      .setPositions(this.positions)
+      .setState(this.state);
   }
 
   makePlayerSelection(selection: PlayerSelection) {
@@ -115,6 +128,51 @@ export class Draft {
     }
     return true;
   }
+
+  inProgress(): boolean {
+    switch (this.state) {
+      case State.AUTO_DRAFT:
+      case State.USER_PICK:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  restart(): Draft {
+    return this.toBuilder()
+      .setSelections([])
+      .setCurrentRound(1)
+      .setCurrentPick(1)
+      .setState(State.CONFIGURING)
+      .build();
+  }
+
+  pause(): Draft {
+    return this.toBuilder()
+      .setState(State.PAUSED)
+      .build();
+  }
+
+  start(): Draft {
+    return this.toBuilder()
+      .setCurrentRound(1)
+      .setCurrentPick(1)
+      .setState(State.AUTO_DRAFT)
+      .build();
+  }
+
+  resume() {
+    return this.toBuilder()
+      .setState(State.AUTO_DRAFT)
+      .build();
+  }
+
+  private finish() {
+    return this.toBuilder()
+      .setState(State.FINISHED)
+      .build();
+  }
 }
 
 class Builder {
@@ -125,15 +183,17 @@ class Builder {
   private currentPick: number;
   private players: Player[];
   private positions: Position[];
+  private state: State;
 
   constructor() {
-    this.numRounds = -1;
-    this.numTeams = -1
+    this.numRounds = 5;
+    this.numTeams = 10
     this.currentRound = 1;
     this.currentPick = 1;
     this.selections = [];
     this.players = [];
     this.positions = [];
+    this.state = State.CONFIGURING
   }
 
   setNumRounds(numRounds: number) {
@@ -152,6 +212,11 @@ class Builder {
   }
 
   build() {
+    if (this.currentRound > this.numRounds) {
+      this.currentRound = this.numRounds;
+      this.currentPick = this.numTeams;
+      this.state = State.FINISHED;
+    }
     return new Draft({
       numRounds: this.numRounds,
       numTeams: this.numTeams,
@@ -160,26 +225,32 @@ class Builder {
       selections: this.selections,
       players: this.players,
       positions: this.positions,
+      state: this.state,
     });
   }
 
-  setCurrentRound(currentRound: number) {
+  setCurrentRound(currentRound: number): Builder {
     this.currentRound = currentRound;
     return this;
   }
 
-  setCurrentPick(currentPick: number) {
+  setCurrentPick(currentPick: number): Builder {
     this.currentPick = currentPick;
     return this;
   }
 
-  setPlayers(players: Player[]) {
+  setPlayers(players: Player[]): Builder {
     this.players = players;
     return this;
   }
 
-  setPositions(positions: Position[]) {
+  setPositions(positions: Position[]): Builder {
     this.positions = positions;
+    return this;
+  }
+
+  setState(state: State): Builder {
+    this.state = state;
     return this;
   }
 }

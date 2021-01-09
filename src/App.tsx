@@ -12,8 +12,7 @@ import { Controls } from './components/controls/controls';
 
 export function App() {
   const [positions, setPositions] = React.useState(STANDARD_POSITIONS);
-  const [draftInProgress, setDraftInProgress] = React.useState(false);
-  const [draft, setDraft] =
+  const [draft, _setDraft] =
     React.useState(
       Draft.newBuilder()
         .setNumTeams(5)
@@ -21,19 +20,21 @@ export function App() {
         .setPositions(positions)
         .setPlayers(ROOKIES_2019.filter(player => positions.includes(player.position)))
         .build());
-  useAutoDraft({draft, setDraft, draftInProgress, setDraftInProgress});
+  const setDraft = (foo: Draft) => {
+    console.log('setDraft()', foo);
+    _setDraft(foo);
+  }
+  useAutoDraft({draft, setDraft});
 
   return (
     <>
       <SelectPositions positions={positions} setPositions={setPositions} />
       <Controls
         draft={draft}
-        setDraft={setDraft}
-        draftInProgress={draftInProgress}
-        setDraftInProgress={setDraftInProgress} />
+        setDraft={setDraft} />
       <DraftBoard draft={draft} setDraft={setDraft} numTeams={draft.numTeams} numRounds={draft.numRounds} />
       <div style={{display: 'flex'}}>
-        <AllPlayers draft={draft} draftInProgress={draftInProgress} setDraft={setDraft} />
+        <AllPlayers draft={draft} setDraft={setDraft} />
         {getPlayerListsForEachPosition()}
       </div>
     </>);
@@ -44,7 +45,6 @@ export function App() {
       .map(
         players =>
           <PlayerList
-            draftInProgress={draftInProgress}
             players={players}
             header={players[0].position}
             draft={draft}

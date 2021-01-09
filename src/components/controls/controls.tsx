@@ -1,33 +1,47 @@
 import { Draft } from '../../entities/draft/draft';
+import { State } from '../../entities/draft/state';
 
 interface Props {
   draft: Draft,
   setDraft: (draft: Draft) => void,
-  draftInProgress: boolean
-  setDraftInProgress: (draftInProgress: boolean) => void,
 }
 
 export function Controls(props: Props) {
-  if (props.draft.isComplete()) {
-    return <RestartButton />;
+  return (
+    <div id={'draft-controls'}>
+      {props.draft.state}
+      {getAppropriateButtons()}
+    </div>
+  );
+
+  function getAppropriateButtons() {
+    switch (props.draft.state) {
+      case State.AUTO_DRAFT:
+      case State.USER_PICK:
+        return <PauseDraftButton />;
+      case State.CONFIGURING:
+        return <StartDraftButton />;
+      case State.FINISHED:
+        return <RestartButton />;
+      case State.PAUSED:
+        return (
+          <>
+            <ResumeButton />
+            <RestartButton />
+          </>
+        );
+      case State.INVALID_STATE:
+      default:
+        console.log('Unexpected draft state: ' + props.draft.state);
+    }
   }
-  if (props.draftInProgress) {
-    return <PauseDraftButton />;
-  }
-  return <StartDraftButton />;
 
   function RestartButton() {
     return <button onClick={restartDraft}>Draft Again!</button>;
 
     function restartDraft() {
-      const draft =
-        props.draft.toBuilder()
-          .setSelections([])
-          .setCurrentRound(1)
-          .setCurrentPick(1)
-          .build();
+      const draft = props.draft.restart();
       props.setDraft(draft);
-      props.setDraftInProgress(false);
     }
   }
 
@@ -35,7 +49,17 @@ export function Controls(props: Props) {
     return <button onClick={pauseDraft}>Pause Draft</button>;
 
     function pauseDraft() {
-      props.setDraftInProgress(false);
+      const draft = props.draft.pause();
+      props.setDraft(draft);
+    }
+  }
+
+  function ResumeButton() {
+    return <button onClick={resumeDraft}>Resume Draft</button>;
+
+    function resumeDraft() {
+      const draft = props.draft.resume();
+      props.setDraft(draft);
     }
   }
 
@@ -43,7 +67,8 @@ export function Controls(props: Props) {
     return <button onClick={startDraft}>Start Draft</button>;
 
     function startDraft() {
-      props.setDraftInProgress(true);
+      const draft = props.draft.start();
+      props.setDraft(draft);
     }
   }
 }

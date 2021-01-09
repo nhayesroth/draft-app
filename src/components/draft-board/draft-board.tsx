@@ -17,14 +17,10 @@ export function DraftBoard(props: Props) {
   );
 
   function getHeaders() {
+    const teamNames = props.draft.teamNames;
     return (
-      <tr>{generateTeamNames().map(drafter => <th style={BORDER}>{drafter}</th>)}</tr>
+      <tr>{teamNames.map(drafter => <th style={BORDER}>{drafter}</th>)}</tr>
     );
-
-    function generateTeamNames() {
-      return [...Array(props.numTeams).keys()]
-        .map(index => 'Team-' + (index + 1));
-    }
   }
 
   function getDraftRows() {
