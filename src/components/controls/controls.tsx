@@ -1,15 +1,16 @@
-import { Draft } from '../../entities/draft/draft';
+import { DisplayMode } from './display-mode';
 import { State } from '../../entities/draft/state';
+import { ChooseWhatToConfigure, Props } from './choose-what-to-configure';
 
-interface Props {
-  draft: Draft,
-  setDraft: (draft: Draft) => void,
-}
 
 export function Controls(props: Props) {
   return (
-    <div id={'draft-controls'}>
-      {props.draft.state}
+    <div
+      id={'draft-controls'}
+      style={{width: 'max-content', borderWidth: '1px', borderColor: 'black', borderStyle: 'solid'}}
+    >
+      Controls
+      <DisplayMode draft={props.draft} />
       {getAppropriateButtons()}
     </div>
   );
@@ -20,7 +21,12 @@ export function Controls(props: Props) {
       case State.USER_PICK:
         return <PauseDraftButton />;
       case State.CONFIGURING:
-        return <StartDraftButton />;
+        return (
+          <>
+            <ChooseWhatToConfigure draft={props.draft} setDraft={props.setDraft} />
+            <StartDraftButton />
+          </>
+        );
       case State.FINISHED:
         return <RestartButton />;
       case State.PAUSED:

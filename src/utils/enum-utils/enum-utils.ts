@@ -1,8 +1,15 @@
-interface EnumType<T> {
-    [key: string]: T
-}
+export function toNormalCase(stringEnum: string): string {
+  return stringEnum
+    .split('_')
+    .map(word => capitalizeFirstLetter(word))
+    .join(' ');
 
-export function keys<T>(enumType: EnumType<T>): T[] {
-    const keys = Object.values(enumType);
-    return keys.slice(0, keys.length / 2);
+  function capitalizeFirstLetter(word: string): string {
+    const array = word.split('');
+    array[0] = array[0].toUpperCase();
+    for (let i = 1; i < array.length; i += 1) {
+      array[i] = array[i].toLowerCase();
+    }
+    return array.join('');
+  }
 }
