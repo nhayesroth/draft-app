@@ -9,6 +9,7 @@ interface ReactSelectOption {
 /**
  * Converts an object (assumed to be an {@link enum} into a list of options for react-select components.
  * @param enumObject
+ * @param enumMapper
  */
 export function getAllOptionsForEnum(enumObject: object, enumMapper?: (enumString: any) => string): ReactSelectOption[] {
   return Object
@@ -18,6 +19,6 @@ export function getAllOptionsForEnum(enumObject: object, enumMapper?: (enumStrin
 
 export function toOption(arg: any, stringMapper?: (string: any) => string): ReactSelectOption {
   return stringMapper
-    ? {label: stringMapper(arg), value: stringMapper(arg)}
-    : {label: EnumUtils.toNormalCase(arg), value: EnumUtils.toNormalCase(arg)};
+    ? {label: stringMapper(arg), value: arg}
+    : {label: EnumUtils.toNormalCase(arg), value: arg};
 }

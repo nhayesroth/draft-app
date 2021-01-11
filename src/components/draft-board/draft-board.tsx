@@ -2,6 +2,8 @@ import { Draft } from '../../entities/draft/draft';
 import { Pick } from '../../entities/draft/pick';
 import { PlayerSelection } from '../../entities/draft/player-selection';
 import { State } from '../../entities/draft/state';
+import { HeaderRow } from './header-row';
+import { ConfigureMode } from '../../entities/draft/configure-mode';
 
 interface Props {
   numRounds: number,
@@ -18,45 +20,10 @@ export function DraftBoard(props: Props) {
       <colgroup>
         <col span={props.numTeams} style={{minWidth: '200px'}} />
       </colgroup>
-      {getTeamNameHeaders()}
+      <HeaderRow draft={props.draft} setDraft={props.setDraft} />
       {getDraftRows()}
     </table>
   );
-
-  function getTeamNameHeaders() {
-    const teamNames = props.draft.teamNames;
-    console.log('teamNames', teamNames);
-    return (
-      <tr>{
-        teamNames
-          .map((teamName, index) => {
-            return <th style={BORDER} onClick={() => claimTeam(index)}>{teamName}</th>
-          })}
-      </tr>
-    );
-
-    function claimTeam(index: number) {
-      if (props.draft.state !== State.CONFIGURING) return;
-      const teamNames = [...props.draft.teamNames];
-      const oldTeamIndex = teamNames.findIndex(s => s === 'My Team');
-      if (oldTeamIndex !== -1) {
-        teamNames[oldTeamIndex] = 'Team-' + (oldTeamIndex + 1);
-      }
-      teamNames[index] = 'My Team';
-      let userPicks: Pick[] = [];
-      console.log('claimTeam() - index', index);
-      for (let round = 1; round <= props.draft.numRounds; round += 1) {
-        const pick = new Pick(round, index + 1);
-        userPicks = userPicks.concat(pick);
-        console.log('claimTeam() - addPick()', pick);
-      }
-      props.setDraft(
-        props.draft.toBuilder()
-          .setTeamNames(teamNames)
-          .setUserPicks(userPicks)
-          .build());
-    }
-  }
 
   function getDraftRows() {
     return [...Array(props.numRounds).keys()]
@@ -87,7 +54,7 @@ export function DraftBoard(props: Props) {
     const pick: Pick = new Pick(args.round, args.pick);
     const isUserPick = props.draft.isUserPick(pick);
     return (
-      <td style={isUserPick ? USER_PICK : BORDER} onClick={toggleUserPick}>
+      <td style={isUserPick ? USER_PICK : BORDER} onClick={() => handleClick(props.draft.configureMode)}>
         <CellHeader isUserPick={isUserPick} />
         {selection
           ? `${formatPick()} ${selection.player.name} (${selection.player.position})`
@@ -104,6 +71,15 @@ export function DraftBoard(props: Props) {
         : `${args.round}.${args.pick}`;
     }
 
+    function handleClick(configureMode: ConfigureMode = ConfigureMode.ASSIGN_PICKS) {
+      switch (configureMode) {
+        case ConfigureMode.ASSIGN_PICKS:
+          return toggleUserPick();
+        case ConfigureMode.CONFIGURE_CPU:
+          return configureComputerPick();
+      }
+    }
+
     function toggleUserPick() {
       if (props.draft.state !== State.CONFIGURING) return;
       if (props.draft.isUserPick(pick)) {
@@ -111,6 +87,10 @@ export function DraftBoard(props: Props) {
       } else {
         props.setDraft(props.draft.addUserPick(pick));
       }
+    }
+
+    function configureComputerPick() {
+      console.log('TODO - configureComputerPick', {round: args.round, pick: args.pick});
     }
   }
 

@@ -20,6 +20,7 @@ export function App() {
         .setPositions(positions)
         .setPlayers(ROOKIES_2019.filter(player => positions.includes(player.position)))
         .build());
+  console.log('App.draft', draft);
   const setDraft = (foo: Draft) => {
     console.log('setDraft()', foo);
     _setDraft(foo);

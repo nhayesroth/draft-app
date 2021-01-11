@@ -3,19 +3,7 @@ import { Player } from '../players/player';
 import { Position } from '../positions/position';
 import { State } from './state';
 import { Pick } from './pick';
-
-interface Args {
-  userPicks: Pick[];
-  teamNames?: string[];
-  numRounds: number,
-  numTeams: number,
-  currentRound: number,
-  currentPick: number,
-  selections: (PlayerSelection | null)[][],
-  players: Player[],
-  positions: Position[],
-  state?: State,
-}
+import { ConfigureMode } from './configure-mode';
 
 export class Draft {
   readonly numRounds: number;
@@ -28,8 +16,21 @@ export class Draft {
   selections: (PlayerSelection | null)[][];
   players: Player[];
   positions: Position[];
+  readonly configureMode: ConfigureMode;
 
-  constructor(args: Args) {
+  constructor(
+    args: {
+      currentRound: number;
+      selections: (PlayerSelection | null)[][];
+      numRounds: number; userPicks: Pick[];
+      configureMode: ConfigureMode;
+      teamNames: string[];
+      players: Player[];
+      numTeams: number;
+      positions: Position[];
+      state: State;
+      currentPick: number
+    }) {
     this.numRounds = args.numRounds;
     this.numTeams = args.numTeams
     this.teamNames = args.teamNames || Draft.generateTeamNames(args.numTeams);
@@ -40,6 +41,7 @@ export class Draft {
     this.positions = args.positions;
     this.state = args.state || State.CONFIGURING;
     this.userPicks = args.userPicks;
+    this.configureMode = args.configureMode;
   }
 
   static generateTeamNames(numTeams: number): string[] {
@@ -62,7 +64,8 @@ export class Draft {
       .setPositions(this.positions)
       .setState(this.state)
       .setUserPicks(this.userPicks)
-      .setTeamNames(this.teamNames);
+      .setTeamNames(this.teamNames)
+      .setConfigureMode(this.configureMode);
   }
 
   makePlayerSelection(selection: PlayerSelection) {
@@ -121,7 +124,6 @@ export class Draft {
 
   isComplete() {
     if (this.currentRound <= this.numRounds) {
-      console.log(`isComplete()? (${this.currentRound}.${this.currentPick}) - this.currentRound(${this.currentRound}) <= this.numRounds(${this.numRounds})`, this.currentRound <= this.numRounds)
       return false;
     }
     for (let round = 1; round < this.selections.length; round += 1) {
@@ -195,6 +197,14 @@ export class Draft {
       .setUserPicks(this.userPicks.concat(pick))
       .build();
   }
+
+  setConfigureMode(configureMode: ConfigureMode): Draft {
+    console.log('Draft.setConfigureMode()', configureMode)
+    return this
+      .toBuilder()
+      .setConfigureMode(configureMode)
+      .build();
+  }
 }
 
 class Builder {
@@ -208,6 +218,7 @@ class Builder {
   private state: State;
   private userPicks: Pick[];
   private teamNames: string[];
+  private configureMode: ConfigureMode;
 
   constructor() {
     this.numRounds = 5;
@@ -218,6 +229,7 @@ class Builder {
     this.players = [];
     this.positions = [];
     this.state = State.CONFIGURING
+    this.configureMode = ConfigureMode.ASSIGN_PICKS;
     this.userPicks = [];
     this.teamNames = [];
   }
@@ -310,6 +322,12 @@ class Builder {
       state: this.state,
       userPicks: this.userPicks,
       teamNames: this.teamNames,
+      configureMode: this.configureMode,
     });
+  }
+
+  setConfigureMode(configureMode: ConfigureMode): Builder {
+    this.configureMode = configureMode;
+    return this;
   }
 }
